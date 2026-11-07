@@ -1,0 +1,273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrganizationType {
+  estate
+  school
+  event
+}
+
+enum Role {
+  estate_admin
+  resident
+  estate_security
+  school_admin
+  teacher
+  parent
+  school_security
+  event_organizer
+  event_security
+}
+
+enum OrganizationStatus {
+  pending
+  active
+  suspended
+  rejected
+}
+
+enum MembershipStatus {
+  pending
+  active
+  suspended
+  rejected
+}
+
+enum PassPurpose {
+  personal
+  delivery
+  maintenance
+  event_guest
+  other
+}
+
+enum PassStatus {
+  active
+  checked_in
+  checked_out
+  revoked
+}
+
+enum GateAction {
+  entry
+  exit
+}
+
+enum GateResult {
+  success
+  denied
+}
+
+enum UserStatus {
+  active
+  suspended
+}
+
+model User {
+  id                 Int       @id @default(autoincrement())
+  fullName           String    @db.VarChar(120)
+  email              String    @unique @db.VarChar(254)
+  phone              String?   @unique @db.VarChar(20)
+  passwordHash       String    @db.VarChar(255)
+  isSuperAdmin       Boolean   @default(false)
+  emailVerifiedAt    DateTime?
+  photoFile          String?   @db.VarChar(100)
+  mustChangePassword Boolean   @default(false)
+  status             UserStatus @default(active)
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  memberships         Membership[]  @relation("MembershipUser")
+  reviewedMemberships Membership[]  @relation("MembershipReviewer")
+  createdOrganizations Organization[]
+  refreshTokens       RefreshToken[]
+  createdPasses       VisitorPass[] @relation("PassCreator")
+  admittedPasses      VisitorPass[] @relation("PassAdmitter")
+  gateLogs            GateLog[]
+  notices             Notice[]
+
+  @@map("users")
+}
+
+model Organization {
+  id          Int                @id @default(autoincrement())
+  type        OrganizationType
+  name        String             @db.VarChar(150)
+  address     String?            @db.VarChar(255)
+  city        String?            @db.VarChar(100)
+  totalHouses Int?
+  status      OrganizationStatus @default(pending)
+  createdById Int
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  createdBy   User          @relation(fields: [createdById], references: [id])
+  memberships Membership[]
+  streets     Street[]
+  houses      House[]
+  passes      VisitorPass[]
+  gateLogs    GateLog[]
+  notices     Notice[]
+
+  @@index([type, status, name])
+  @@map("organizations")
+}
+
+model Membership {
+  id               Int              @id @default(autoincrement())
+  userId           Int
+  organizationId   Int
+  role             Role
+  status           MembershipStatus @default(pending)
+  houseId          Int?
+  requestedHouseId Int?
+  changeRequestedAt DateTime?
+  assignedGate     String?          @db.VarChar(60)
+  shift            String?          @db.VarChar(60)
+  reviewedById     Int?
+  reviewedAt       DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  user           User         @relation("MembershipUser", fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reviewedBy     User?        @relation("MembershipReviewer", fields: [reviewedById], references: [id])
+  house          House?       @relation(fields: [houseId], references: [id], onDelete: Restrict)
+  requestedHouse House?       @relation("RequestedHouse", fields: [requestedHouseId], references: [id], onDelete: SetNull)
+  refreshTokens  RefreshToken[]
+  hostedPasses   VisitorPass[]
+
+  @@unique([userId, organizationId, role])
+  @@index([organizationId, status])
+  @@map("memberships")
+}
+
+model Street {
+  id             Int      @id @default(autoincrement())
+  organizationId Int
+  name           String   @db.VarChar(100)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  houses       House[]
+
+  @@unique([organizationId, name])
+  @@map("streets")
+}
+
+model House {
+  id             Int      @id @default(autoincrement())
+  organizationId Int
+  streetId       Int
+  number         String   @db.VarChar(50)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  street       Street       @relation(fields: [streetId], references: [id], onDelete: Cascade)
+  residents    Membership[]
+  moveRequests Membership[] @relation("RequestedHouse")
+  passes       VisitorPass[]
+
+  @@unique([streetId, number])
+  @@index([organizationId])
+  @@map("houses")
+}
+
+model VisitorPass {
+  id               Int         @id @default(autoincrement())
+  organizationId   Int
+  code             String      @db.VarChar(12)
+  visitorName      String      @db.VarChar(120)
+  phone            String?     @db.VarChar(20)
+  purpose          PassPurpose @default(personal)
+  houseId          Int
+  hostMembershipId Int?
+  createdById      Int
+  createdByRole    Role
+  validFrom        DateTime
+  validTo          DateTime
+  status           PassStatus  @default(active)
+  checkedInAt      DateTime?
+  checkedOutAt     DateTime?
+  admittedById     Int?
+  revokedAt        DateTime?
+  exitCode         String?     @db.VarChar(12)
+  exitCodeValidTo  DateTime?
+  createdAt        DateTime    @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  house          House        @relation(fields: [houseId], references: [id], onDelete: Restrict)
+  hostMembership Membership?  @relation(fields: [hostMembershipId], references: [id], onDelete: SetNull)
+  createdBy      User         @relation("PassCreator", fields: [createdById], references: [id])
+  admittedBy     User?        @relation("PassAdmitter", fields: [admittedById], references: [id])
+  gateLogs       GateLog[]
+
+  @@unique([organizationId, code])
+  @@unique([organizationId, exitCode])
+  @@index([organizationId, status, validTo])
+  @@index([hostMembershipId])
+  @@index([houseId])
+  @@map("visitor_passes")
+}
+
+model GateLog {
+  id             Int        @id @default(autoincrement())
+  organizationId Int
+  passId         Int?
+  code           String     @db.VarChar(12)
+  action         GateAction
+  result         GateResult
+  reason         String?    @db.VarChar(120)
+  officerId      Int
+  createdAt      DateTime   @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pass         VisitorPass? @relation(fields: [passId], references: [id], onDelete: SetNull)
+  officer      User         @relation(fields: [officerId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([passId])
+  @@map("gate_logs")
+}
+
+model Notice {
+  id             Int      @id @default(autoincrement())
+  organizationId Int
+  title          String   @db.VarChar(150)
+  message        String   @db.Text
+  createdById    Int
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@map("notices")
+}
+
+model RefreshToken {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  familyId     String    @db.Char(36)
+  tokenHash    String    @unique @db.Char(64)
+  membershipId Int?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  ip           String?   @db.VarChar(45)
+  userAgent    String?   @db.VarChar(255)
+  createdAt    DateTime  @default(now())
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membership Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+
+  @@index([familyId])
+  @@index([userId])
+  @@map("refresh_tokens")
+}

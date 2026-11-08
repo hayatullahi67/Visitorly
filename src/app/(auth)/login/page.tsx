@@ -155,7 +155,8 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <p className="text-xs leading-5 text-slate-500">After signing in, Visitorly opens the dashboard for your assigned role. If you have more than one estate membership, you may be asked to choose which estate to open.</p>\n            <div className="flex items-center justify-end">
+            <p className="text-xs leading-5 text-slate-500">After signing in, Visitorly opens the dashboard for your assigned role. If you have more than one estate membership, you may be asked to choose which estate to open.</p>
+            <div className="flex items-center justify-end">
               <Link
                 href="/forgot-password"
                 className="text-sm font-medium text-indigo-600 hover:text-indigo-500"

@@ -3,7 +3,7 @@ import { createAccessToken, getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
-const schema = z.strictObject({ membershipId: z.number().int().positive() });
+const schema = z.object({ membershipId: z.number().int().positive() }).strict();
 
 export async function POST(req: NextRequest) {
   const session = await getSession();

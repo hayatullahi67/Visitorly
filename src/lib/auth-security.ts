@@ -5,6 +5,7 @@ export function clientIp(request: Request) {
   return request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 }
 
+/** Database-backed fixed-window rate limit shared across application instances. */
 export async function enforceRateLimit(key: string, limit: number, windowSeconds: number) {
   key = createHash("sha256").update(key).digest("hex");
   const now = new Date();
@@ -31,6 +32,7 @@ export function makeCode() {
   return randomInt(0, 1_000_000).toString().padStart(6, "0");
 }
 
+/** Codes are stored as keyed hashes so a database leak does not reveal usable codes. */
 export function hashCode(code: string) {
   const secret = process.env.AUTH_CODE_SECRET || process.env.JWT_SECRET;
   if (!secret || secret.length < 32) throw new Error("AUTH_CODE_SECRET or a 32-character JWT_SECRET is required.");
@@ -38,34 +40,60 @@ export function hashCode(code: string) {
 }
 
 export async function sendAuthCode(email: string, code: string, purpose: "email_verification" | "password_reset") {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
-  if (!apiKey || !from) throw new Error("Email delivery is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.");
+  const serviceId = process.env.EMAILJS_SERVICE_ID;
+  const templateId = process.env.EMAILJS_TEMPLATE_ID;
+  const publicKey = process.env.EMAILJS_PUBLIC_KEY;
+  const privateKey = process.env.EMAILJS_PRIVATE_KEY;
+
+  if (!serviceId || !templateId || !publicKey || !privateKey) {
+    throw new Error("EmailJS is not configured. Set EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY and EMAILJS_PRIVATE_KEY.");
+  }
+
   const isReset = purpose === "password_reset";
   const subject = isReset ? "Your Visitorly password reset code" : "Verify your Visitorly email";
   const heading = isReset ? "Reset your password" : "Verify your email address";
   const message = isReset
     ? "Use this code to choose a new password. If you did not request this, you can ignore this email."
     : "Enter this code in Visitorly to verify your email address.";
-  const response = await fetch("https://api.resend.com/emails", {
+
+  const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      from,
-      to: [email],
-      subject,
-      html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;color:#0f172a"><h2>${heading}</h2><p>${message}</p><div style="font-size:32px;font-weight:700;letter-spacing:10px;padding:18px;background:#f1f5f9;border-radius:12px;text-align:center">${code}</div><p>This code expires in 10 minutes. Do not share it with anyone.</p><p>Visitorly</p></div>`,
+      service_id: serviceId,
+      template_id: templateId,
+      user_id: publicKey,
+      accessToken: privateKey,
+      template_params: {
+        to_email: email,
+        email: email,
+        subject,
+        heading,
+        message,
+        code,
+        expires_in: "10 minutes",
+        app_name: "Visitorly",
+        purpose: isReset ? "password_reset" : "email_verification",
+      },
     }),
+    cache: "no-store",
   });
-  if (!response.ok) throw new Error(`Email provider rejected the request (${response.status}).`);
+
+  if (!response.ok) {
+    const providerMessage = await response.text().catch(() => "");
+    console.error("EmailJS delivery failed:", response.status, providerMessage.slice(0, 500));
+    throw new Error(`EmailJS rejected the email request (${response.status}).`);
+  }
 }
 
 export async function issueAuthCode(userId: number, email: string, purpose: "email_verification" | "password_reset") {
   const code = makeCode();
+
   await prisma.authCode.updateMany({
     where: { userId, purpose, consumedAt: null },
     data: { consumedAt: new Date() },
   });
+
   await prisma.authCode.create({
     data: {
       userId,
@@ -74,5 +102,6 @@ export async function issueAuthCode(userId: number, email: string, purpose: "ema
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     },
   });
+
   await sendAuthCode(email, code, purpose);
 }

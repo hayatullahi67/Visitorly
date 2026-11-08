@@ -1,0 +1,13 @@
+"use client";
+import { useState } from "react";
+import { useRouter,useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+export default function VerifyEmailPage(){
+ const router=useRouter();const params=useSearchParams();const [email,setEmail]=useState(params.get("email")||"");const [code,setCode]=useState("");const [message,setMessage]=useState("");const [error,setError]=useState("");const [loading,setLoading]=useState(false);
+ async function submit(e:React.FormEvent){e.preventDefault();setLoading(true);setError("");setMessage("");try{const r=await fetch("/api/auth/verification/confirm",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,code})});const d=await r.json();if(!r.ok){setError(d.error?.message||"Unable to verify email.");return;}setMessage(d.message);setTimeout(()=>router.push("/login?verified=1"),900);}catch{setError("Something went wrong. Try again.");}finally{setLoading(false);}}
+ async function resend(){setLoading(true);setError("");setMessage("");try{const r=await fetch("/api/auth/verification/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email})});const d=await r.json();if(!r.ok){setError(d.error?.message||"Unable to send code.");return;}setMessage(d.message);}catch{setError("Something went wrong. Try again.");}finally{setLoading(false);}}
+ return <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4"><section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 shadow-sm"><h1 className="text-2xl font-bold text-slate-900">Verify your email</h1><p className="mt-2 mb-6 text-sm text-slate-600">Enter the six-digit code sent to your email. It expires in 10 minutes.</p>{error&&<p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}{message&&<p role="status" className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}<form onSubmit={submit} className="space-y-4"><Input label="Email address" type="email" value={email} onChange={e=>setEmail(e.target.value)} required/><Input label="Six-digit code" inputMode="numeric" maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/\\D/g,"").slice(0,6))} required/><Button type="submit" className="w-full" isLoading={loading}>Verify email</Button></form><button onClick={resend} disabled={loading||!email} className="mt-4 w-full text-sm font-medium text-indigo-600 disabled:opacity-50">Resend verification code</button><p className="mt-6 text-center text-sm"><Link href="/login" className="font-semibold text-indigo-600">Back to sign in</Link></p></section></main>;
+}

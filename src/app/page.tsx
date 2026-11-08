@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  ArrowRight, BadgeCheck, Bell, Building2, CheckCircle2, ChevronDown,
-  ClipboardCheck, Fingerprint, Home, QrCode, ShieldCheck, Smartphone,
-  UserRoundCheck, Users, ScanLine, Clock3,
+  ArrowRight, BadgeCheck, Building2, ChevronDown,
+  ClipboardCheck, Home, QrCode, ShieldCheck, Smartphone,
+  Users, ScanLine,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import PWAInstall from "@/components/pwa-install";
@@ -32,8 +32,8 @@ const processSteps = [
   },
   {
     number: "4",
-    title: "The visit is recorded",
-    description: "The visitor's gate activity can be recorded so authorised estate personnel have a clearer history of visits.",
+    title: "Gate activity is recorded",
+    description: "Where the estate has enabled visit recording, authorised personnel can review the recorded gate activity.",
     icon: ClipboardCheck,
     detail: "Estate records help the appropriate team review visitor activity when needed.",
   },
@@ -79,7 +79,7 @@ const faqs = [
   },
   {
     question: "What if I have not been given an estate account?",
-    answer: "Start by creating your personal account. Then follow the estate-joining process available in Visitorly, or contact your estate administrator if you need an invitation or approval.",
+    answer: "Start by creating your personal account. Then contact your estate administrator so they can arrange the correct estate membership for you. Until your membership is active, you may see a pending-access message.",
   },
 ];
 
@@ -133,7 +133,7 @@ export default async function HomePage() {
               <Link href="/register" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Create your account <ArrowRight className="h-4 w-4" /></Link>
               <Link href="/login" className="inline-flex h-12 items-center justify-center rounded-lg border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-100">I already have an account</Link>
             </div>
-            <p className="mt-4 text-xs leading-5 text-slate-500">New to Visitorly? Create your personal account first. You can then join your estate or use an invitation from your estate administrator.</p>
+            <p className="mt-4 text-xs leading-5 text-slate-500">New to Visitorly? Create your personal account first. Your estate administrator will need to arrange your estate membership before you can use estate-specific features.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_55px_-30px_rgba(15,23,42,0.28)] sm:p-7">
@@ -159,7 +159,7 @@ export default async function HomePage() {
               <div className="ml-5 h-5 border-l-2 border-dashed border-slate-200" />
               <div className="flex gap-4">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><ClipboardCheck className="h-5 w-5" /></span>
-                <div><p className="font-semibold text-slate-900">The visit is recorded</p><p className="mt-1 text-sm leading-6 text-slate-600">The gate team records the visit according to estate procedure.</p></div>
+                <div><p className="font-semibold text-slate-900">The visit is recorded</p><p className="mt-1 text-sm leading-6 text-slate-600">The security officer follows the estate's procedure for recording the visitor's arrival and departure.</p></div>
               </div>
             </div>
             <div className="mt-7 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">The goal is simple: residents know how to prepare for guests, visitors know what to show, and security knows what to check.</div>
@@ -211,8 +211,8 @@ export default async function HomePage() {
             <div><p className="text-sm font-bold uppercase tracking-wider text-indigo-300">Getting started</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Your first steps with Visitorly.</h2><p className="mt-4 max-w-xl leading-7 text-indigo-100">You do not need to understand everything before you begin. Start with your personal account, then connect to the estate you belong to.</p><Link href="/register" className="mt-7 inline-flex h-12 items-center gap-2 rounded-lg bg-white px-6 text-sm font-semibold text-indigo-950 hover:bg-indigo-50">Create a personal account <ArrowRight className="h-4 w-4" /></Link></div>
             <div className="space-y-4">
               <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">1</span><div><p className="font-semibold">Register your details</p><p className="mt-1 text-sm leading-6 text-indigo-100">Enter your name, email address and password to create your personal account.</p></div></div>
-              <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">2</span><div><p className="font-semibold">Verify your email</p><p className="mt-1 text-sm leading-6 text-indigo-100">Complete the email verification step to confirm that the email address belongs to you.</p></div></div>
-              <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">3</span><div><p className="font-semibold">Join your estate</p><p className="mt-1 text-sm leading-6 text-indigo-100">Choose or request access to the correct estate. Your membership may need approval.</p></div></div>
+              <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">2</span><div><p className="font-semibold">Sign in to your account</p><p className="mt-1 text-sm leading-6 text-indigo-100">Use the email address and password you registered with to access your account.</p></div></div>
+              <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">3</span><div><p className="font-semibold">Ask your estate administrator to add you</p><p className="mt-1 text-sm leading-6 text-indigo-100">Your personal account does not automatically give you estate access. The estate administrator must arrange your membership.</p></div></div>
               <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">4</span><div><p className="font-semibold">Use your assigned dashboard</p><p className="mt-1 text-sm leading-6 text-indigo-100">After access is active, Visitorly takes you to the area for your role.</p></div></div>
             </div>
           </div>

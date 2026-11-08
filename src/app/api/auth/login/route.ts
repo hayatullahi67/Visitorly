@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createHash, randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { createAccessToken, createRefreshToken, verifyPassword } from "@/lib/auth";
+import { clientIp, enforceRateLimit } from "@/lib/auth-security";
 
 const loginSchema = z.object({
   identifier: z.string().trim().min(1, "Email or phone is required").max(254),
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { identifier, password } = parsed.data;
+    const { identifier, password } = parsed.data;\n    const rateKey = "login:" + clientIp(req);\n    if (!(await enforceRateLimit(rateKey, 10, 15 * 60))) return NextResponse.json({ error: { code: "RATE_LIMITED", message: "Too many sign-in attempts. Please wait and try again." } }, { status: 429, headers: { "Cache-Control": "no-store" } });
     const isEmail = identifier.includes("@");
     const user = await prisma.user.findFirst({
       where: isEmail
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const activeMembership = user.memberships.find(
+    if (!user.emailVerifiedAt) return NextResponse.json({ error: { code: "EMAIL_NOT_VERIFIED", message: "Verify your email address before signing in." } }, { status: 403, headers: { "Cache-Control": "no-store" } });\n\n    const activeMembership = user.memberships.find(
       (membership) => membership.status === "active" && membership.organization.status === "active"
     );
     const familyId = randomUUID();

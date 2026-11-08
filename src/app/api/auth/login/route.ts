@@ -1,114 +1,75 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { createHash, randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
-import {
-  createAccessToken,
-  createRefreshToken,
-  hashPassword,
-  verifyPassword,
-} from "@/lib/auth";
-import { randomUUID, createHash } from "crypto";
+import { createAccessToken, createRefreshToken, verifyPassword } from "@/lib/auth";
 
 const loginSchema = z.object({
-  identifier: z.string().min(1, "Email or phone is required"),
-  password: z.string().min(1, "Password is required"),
+  identifier: z.string().trim().min(1, "Email or phone is required").max(254),
+  password: z.string().min(1, "Password is required").max(128),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const parsed = loginSchema.safeParse(body);
-
+    const parsed = loginSchema.safeParse(await req.json());
     if (!parsed.success) {
       return NextResponse.json(
-        {
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Invalid input",
-            details: parsed.error.flatten().fieldErrors,
-          },
-        },
-        { status: 400 }
+        { error: { code: "VALIDATION_ERROR", message: "Invalid input", details: parsed.error.flatten().fieldErrors } },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
       );
     }
 
     const { identifier, password } = parsed.data;
     const isEmail = identifier.includes("@");
-
     const user = await prisma.user.findFirst({
       where: isEmail
-        ? { email: identifier.toLowerCase().trim() }
-        : { phone: identifier.trim() },
+        ? { email: identifier.toLowerCase() }
+        : { phone: identifier.replace(/[\\s().-]/g, "") },
       include: {
         memberships: {
           where: { status: { in: ["active", "pending"] } },
-          include: {
-            organization: true,
-            house: { include: { street: true } },
-          },
+          include: { organization: true, house: { include: { street: true } } },
         },
       },
     });
 
-    if (!user || user.status === "suspended") {
+    if (!user || user.status !== "active" || !(await verifyPassword(password, user.passwordHash))) {
       return NextResponse.json(
-        {
-          error: {
-            code: "INVALID_CREDENTIALS",
-            message: "Invalid email/phone or password",
-          },
-        },
-        { status: 401 }
+        { error: { code: "INVALID_CREDENTIALS", message: "Invalid email/phone or password" } },
+        { status: 401, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    const valid = await verifyPassword(password, user.passwordHash);
-    if (!valid) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "INVALID_CREDENTIALS",
-            message: "Invalid email/phone or password",
-          },
-        },
-        { status: 401 }
-      );
-    }
-
-    // Update last login
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
-
+    const activeMembership = user.memberships.find(
+      (membership) => membership.status === "active" && membership.organization.status === "active"
+    );
     const familyId = randomUUID();
-    const refreshToken = await createRefreshToken({
-      userId: user.id,
-      familyId,
-    });
-
-    // Store hashed refresh token
+    const refreshToken = createRefreshToken();
     const tokenHash = createHash("sha256").update(refreshToken).digest("hex");
-    await prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        familyId,
-        tokenHash,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        ip: req.headers.get("x-forwarded-for") || undefined,
-        userAgent: req.headers.get("user-agent") || undefined,
-      },
-    });
 
-    // Prefer active membership, otherwise first one
-    const activeMembership =
-      user.memberships.find((m) => m.status === "active") ||
-      user.memberships[0];
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      }),
+      prisma.refreshToken.create({
+        data: {
+          userId: user.id,
+          familyId,
+          tokenHash,
+          membershipId: activeMembership?.id ?? null,
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+          userAgent: req.headers.get("user-agent")?.slice(0, 255),
+        },
+      }),
+    ]);
 
     const accessToken = await createAccessToken({
       userId: user.id,
       email: user.email,
       fullName: user.fullName,
+      sessionId: familyId,
       membershipId: activeMembership?.id,
       organizationId: activeMembership?.organizationId,
       role: activeMembership?.role,
@@ -124,58 +85,45 @@ export async function POST(req: NextRequest) {
         mustChangePassword: user.mustChangePassword,
         emailVerified: !!user.emailVerifiedAt,
       },
-      memberships: user.memberships.map((m) => ({
-        id: m.id,
-        role: m.role,
-        status: m.status,
+      memberships: user.memberships.map((membership) => ({
+        id: membership.id,
+        role: membership.role,
+        status: membership.status,
         organization: {
-          id: m.organization.id,
-          name: m.organization.name,
-          type: m.organization.type,
-          status: m.organization.status,
+          id: membership.organization.id,
+          name: membership.organization.name,
+          type: membership.organization.type,
+          status: membership.organization.status,
         },
-        house: m.house
-          ? {
-              id: m.house.id,
-              number: m.house.number,
-              street: m.house.street.name,
-            }
+        house: membership.house
+          ? { id: membership.house.id, number: membership.house.number, street: membership.house.street.name }
           : null,
-        assignedGate: m.assignedGate,
-        shift: m.shift,
+        assignedGate: membership.assignedGate,
+        shift: membership.shift,
       })),
-      accessToken,
-      refreshToken,
-    });
+    }, { headers: { "Cache-Control": "no-store" } });
 
-    // Set httpOnly cookies
     response.cookies.set("access_token", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 15 * 60, // 15 minutes
+      maxAge: 15 * 60,
       path: "/",
     });
-
     response.cookies.set("refresh_token", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: "/",
+      maxAge: 30 * 24 * 60 * 60,
+      path: "/api/auth",
     });
 
     return response;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
-      {
-        error: {
-          code: "INTERNAL_ERROR",
-          message: "Something went wrong. Please try again.",
-        },
-      },
-      { status: 500 }
+      { error: { code: "INTERNAL_ERROR", message: "Something went wrong. Please try again." } },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

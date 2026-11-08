@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     const { identifier, password } = parsed.data;
     const rateKey = "login:" + clientIp(req);
-    if (!(await enforceRateLimit(rateKey, 10, 15 * 60))) return NextResponse.json({ error: { code: "RATE_LIMITED", message: "Too many sign-in attempts. Please wait and try again." } }, { status: 429, headers: { "Cache-Control": "no-store" } });
+    if (!(await enforceRateLimit(rateKey, 10, 15 * 60)) || !(await enforceRateLimit("login-identifier:" + identifier.toLowerCase(), 8, 15 * 60))) return NextResponse.json({ error: { code: "RATE_LIMITED", message: "Too many sign-in attempts. Please wait and try again." } }, { status: 429, headers: { "Cache-Control": "no-store" } });
     const isEmail = identifier.includes("@");
     const user = await prisma.user.findFirst({
       where: isEmail

@@ -63,7 +63,7 @@ const roleGuides = [
 const faqs = [
   {
     question: "Does creating a Visitorly account automatically add me to an estate?",
-    answer: "No. Creating an account gives you your personal Visitorly sign-in. You still need to join the correct estate or receive an invitation, and the estate's authorised team may need to approve your membership.",
+    answer: "No. Creating an account gives you your personal Visitorly sign-in. An authorised estate administrator must separately create or assign your estate membership before you can use estate-specific features.",
   },
   {
     question: "Does my visitor need to create a Visitorly account?",
@@ -133,7 +133,7 @@ export default async function HomePage() {
               <Link href="/register" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Create your account <ArrowRight className="h-4 w-4" /></Link>
               <Link href="/login" className="inline-flex h-12 items-center justify-center rounded-lg border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-100">I already have an account</Link>
             </div>
-            <p className="mt-4 text-xs leading-5 text-slate-500">New to Visitorly? Create your personal account first. Your estate administrator will need to arrange your estate membership before you can use estate-specific features.</p>
+            <p className="mt-4 text-xs leading-5 text-slate-500">New to Visitorly? Create your personal account first. Your estate administrator must arrange your estate membership before you can use estate-specific features.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_55px_-30px_rgba(15,23,42,0.28)] sm:p-7">

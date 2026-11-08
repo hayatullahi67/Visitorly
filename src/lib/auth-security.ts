@@ -6,6 +6,7 @@ export function clientIp(request: Request) {
 }
 
 export async function enforceRateLimit(key: string, limit: number, windowSeconds: number) {
+  key = createHash("sha256").update(key).digest("hex");
   const now = new Date();
   const expires = new Date(now.getTime() + windowSeconds * 1000);
   const rows = await prisma.$queryRaw<Array<{ count: number }>>`

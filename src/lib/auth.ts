@@ -5,8 +5,12 @@ import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 import type { Role } from "@prisma/client";
 
+const configuredSecret = process.env.JWT_SECRET;
+if (process.env.NODE_ENV === "production" && (!configuredSecret || configuredSecret.length < 32)) {
+  throw new Error("JWT_SECRET must be set to at least 32 characters in production.");
+}
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "dev-secret-change-me-in-production-32chars"
+  configuredSecret || "local-development-secret-change-before-deploy-123456"
 );
 const ACCESS_TOKEN_EXPIRY = "15m";
 

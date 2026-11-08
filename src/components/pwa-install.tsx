@@ -47,7 +47,7 @@ export default function PWAInstall() {
   }
 
   return (
-    <button onClick={install} className="hidden items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 sm:inline-flex">
+    <button onClick={install} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-2.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 sm:gap-2 sm:px-3 sm:text-sm">
       <Download className="h-4 w-4" /> Install app
     </button>
   );

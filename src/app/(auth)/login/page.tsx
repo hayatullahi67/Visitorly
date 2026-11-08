@@ -30,6 +30,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.error?.code === "EMAIL_NOT_VERIFIED") { router.push("/verify-email?email=" + encodeURIComponent(identifier)); return; }
         setError(data.error?.message || "Login failed");
         return;
       }
@@ -39,6 +40,9 @@ export default function LoginPage() {
         router.push("/change-password");
         return;
       }
+
+      const activeMemberships = data.memberships?.filter((m: any) => m.status === "active" && m.organization.status === "active") || [];
+      if (activeMemberships.length > 1) { router.push("/select-estate"); return; }
 
       const active = data.memberships?.find(
         (m: any) => m.status === "active"

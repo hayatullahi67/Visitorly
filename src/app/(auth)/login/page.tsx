@@ -44,9 +44,7 @@ export default function LoginPage() {
       const activeMemberships = data.memberships?.filter((m: any) => m.status === "active" && m.organization.status === "active") || [];
       if (activeMemberships.length > 1) { router.push("/select-estate"); return; }
 
-      const active = data.memberships?.find(
-        (m: any) => m.status === "active"
-      );
+      const active = activeMemberships[0];
 
       if (!active) {
         router.push("/pending");

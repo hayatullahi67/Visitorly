@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import {
   ArrowRight, ArrowUpRight, BadgeCheck, Bell, Building2, Check,
   CheckCircle2, ChevronRight, Clock3, Fingerprint, Home, LockKeyhole,
-  QrCode, ShieldCheck, Smartphone, Users, UserRoundCheck, ScanLine,
+  QrCode, ShieldCheck, Smartphone, UserRoundCheck, ScanLine,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import PWAInstall from "@/components/pwa-install";

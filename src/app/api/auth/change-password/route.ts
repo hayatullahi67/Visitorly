@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession, hashPassword, verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { clientIp, enforceRateLimit } from "@/lib/auth-security";
 
 const schema = z.object({
   currentPassword: z.string().min(1).max(128),
@@ -12,6 +13,11 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Please sign in again." } }, { status: 401 });
+  }
+
+  if (!(await enforceRateLimit("change-password-ip:" + clientIp(req), 10, 15 * 60)) ||
+      !(await enforceRateLimit("change-password-user:" + session.userId, 5, 60 * 60))) {
+    return NextResponse.json({ error: { code: "RATE_LIMITED", message: "Too many password-change attempts. Please wait before trying again." } }, { status: 429, headers: { "Cache-Control": "no-store" } });
   }
 
   const parsed = schema.safeParse(await req.json());

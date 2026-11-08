@@ -69,6 +69,11 @@ enum UserStatus {
   suspended
 }
 
+enum AuthCodePurpose {
+  email_verification
+  password_reset
+}
+
 model User {
   id                 Int       @id @default(autoincrement())
   fullName           String    @db.VarChar(120)
@@ -88,6 +93,7 @@ model User {
   reviewedMemberships Membership[]  @relation("MembershipReviewer")
   createdOrganizations Organization[]
   refreshTokens       RefreshToken[]
+  authCodes           AuthCode[]
   createdPasses       VisitorPass[] @relation("PassCreator")
   admittedPasses      VisitorPass[] @relation("PassAdmitter")
   gateLogs            GateLog[]
@@ -270,4 +276,32 @@ model RefreshToken {
   @@index([familyId])
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+
+model AuthCode {
+  id         Int             @id @default(autoincrement())
+  userId     Int
+  purpose    AuthCodePurpose
+  codeHash   String          @db.Char(64)
+  expiresAt  DateTime
+  attempts   Int             @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, createdAt])
+  @@index([expiresAt])
+  @@map("auth_codes")
+}
+
+model RateLimitBucket {
+  key             String   @id @db.VarChar(64)
+  count           Int      @default(0)
+  windowStartedAt DateTime @default(now())
+  expiresAt       DateTime
+
+  @@index([expiresAt])
+  @@map("auth_rate_limits")
 }

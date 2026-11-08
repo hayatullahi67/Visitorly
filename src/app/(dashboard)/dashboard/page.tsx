@@ -131,16 +131,13 @@ export default function ResidentDashboard() {
                 Create a QR code they can show at the gate.
               </p>
             </div>
-            <Button
-              variant="secondary"
-              className="bg-white text-indigo-700 hover:bg-indigo-50 shrink-0"
-              asChild
+            <Link
+              href="/dashboard/issue"
+              className="inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-white px-5 py-2 text-sm font-semibold text-indigo-700 transition-all hover:bg-indigo-50"
             >
-              <Link href="/dashboard/issue">
-                <Plus className="h-4 w-4" />
-                Create Pass
-              </Link>
-            </Button>
+              <Plus className="h-4 w-4" />
+              Create Pass
+            </Link>
           </CardContent>
         </Card>
 

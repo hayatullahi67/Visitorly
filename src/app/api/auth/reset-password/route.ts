@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const parsed = schema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: { message: "Enter your email, six-digit code and a password of at least 8 characters." } }, { status: 400 });
     const email = parsed.data.email.toLowerCase();
-    if (!(await enforceRateLimit("pwverify:" + clientIp(req), 10, 15 * 60))) {
+    if (!(await enforceRateLimit("pwverify:" + clientIp(req), 10, 15 * 60)) || !(await enforceRateLimit("pwverify-email:" + email, 8, 15 * 60))) {
       return NextResponse.json({ error: { message: "Too many attempts. Please try again later." } }, { status: 429 });
     }
     const user = await prisma.user.findUnique({ where: { email }, select: { id: true, status: true } });

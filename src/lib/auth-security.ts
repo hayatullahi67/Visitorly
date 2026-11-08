@@ -2,7 +2,7 @@ import { createHash, randomInt } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 
 export function clientIp(request: Request) {
-  return request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  return request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() || "unknown";
 }
 
 /** Database-backed fixed-window rate limit shared across application instances. */

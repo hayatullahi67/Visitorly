@@ -111,7 +111,7 @@ export default function LoginPage() {
             </div>
             <h2 className="text-2xl font-bold text-slate-900">Welcome back</h2>
             <p className="mt-2 text-slate-600">
-              Sign in to your estate account
+              Use the email address or phone number and password linked to your Visitorly account.
             </p>
           </div>
 
@@ -123,9 +123,9 @@ export default function LoginPage() {
             )}
 
             <Input
-              label="Email or Phone Number"
+              label="Email address or phone number"
               type="text"
-              placeholder="name@email.com or +234..."
+              placeholder="Enter your email or phone number"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               required
@@ -136,7 +136,7 @@ export default function LoginPage() {
               <Input
                 label="Password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
+                placeholder="Enter the password you created"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -155,7 +155,7 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <div className="flex items-center justify-end">
+            <p className="text-xs leading-5 text-slate-500">After signing in, Visitorly opens the dashboard for your assigned role. If you have more than one estate membership, you may be asked to choose which estate to open.</p>\n            <div className="flex items-center justify-end">
               <Link
                 href="/forgot-password"
                 className="text-sm font-medium text-indigo-600 hover:text-indigo-500"

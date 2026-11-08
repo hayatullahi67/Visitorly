@@ -3,10 +3,10 @@ import { z } from "zod";
 import { getSession, hashPassword, verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const schema = z.strictObject({
+const schema = z.object({
   currentPassword: z.string().min(1).max(128),
   newPassword: z.string().min(8).max(128),
-});
+}).strict();
 
 export async function POST(req: NextRequest) {
   const session = await getSession();

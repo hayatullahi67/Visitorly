@@ -68,11 +68,13 @@ export default function RegisterPage() {
           <p className="mt-2 text-slate-600">Create your personal Visitorly account. This account is your sign-in; your estate administrator must separately arrange your estate access.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">\n          <p className="rounded-lg bg-indigo-50 px-4 py-3 text-sm leading-6 text-indigo-900">Use an email address you can access. Your name and contact details help identify your account. Your password must contain at least 8 characters.</p>
+        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="rounded-lg bg-indigo-50 px-4 py-3 text-sm leading-6 text-indigo-900">Use an email address you can access. Your name and contact details help identify your account. Your password must contain at least 8 characters.</p>
           {error && <div role="alert" className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
           <Input label="Full Name" value={form.fullName} onChange={(event) => update("fullName", event.target.value)} required placeholder="e.g. Adewale Johnson" />
           <Input label="Email Address" type="email" value={form.email} onChange={(event) => update("email", event.target.value)} required placeholder="you@email.com" />
-          <Input label="Phone Number (optional)" type="tel" value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="+234 803 000 0000" />\n          <p className="-mt-2 text-xs leading-5 text-slate-500">Add a phone number if you want your estate team to have another way to identify or contact you.</p>
+          <Input label="Phone Number (optional)" type="tel" value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="+234 803 000 0000" />
+          <p className="-mt-2 text-xs leading-5 text-slate-500">Add a phone number if you want your estate team to have another way to identify or contact you.</p>
           <Input label="Password" type="password" value={form.password} onChange={(event) => update("password", event.target.value)} required placeholder="At least 8 characters" />
           <Input label="Confirm Password" type="password" value={form.confirmPassword} onChange={(event) => update("confirmPassword", event.target.value)} required placeholder="Repeat your password" />
           <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>Create Account</Button>

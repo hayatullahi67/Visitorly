@@ -9,6 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  applicationName: "Visitorly",
   title: {
     default: "Visitorly | Estate Visitor Management",
     template: "%s | Visitorly",
@@ -39,18 +40,26 @@ export const metadata: Metadata = {
     title: "Visitorly",
     description: "Professional estate visitor management",
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
+  robots: { index: true, follow: true },
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Visitorly",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-512.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/icons/icon-192.svg", type: "image/svg+xml" }],
+  },
 };
 
 export const viewport: Viewport = {
   themeColor: "#4f46e5",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 };
 
 export default function RootLayout({

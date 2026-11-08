@@ -20,12 +20,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { identifier, password } = parsed.data;\n    const rateKey = "login:" + clientIp(req);\n    if (!(await enforceRateLimit(rateKey, 10, 15 * 60))) return NextResponse.json({ error: { code: "RATE_LIMITED", message: "Too many sign-in attempts. Please wait and try again." } }, { status: 429, headers: { "Cache-Control": "no-store" } });
+    const { identifier, password } = parsed.data;
+    const rateKey = "login:" + clientIp(req);
+    if (!(await enforceRateLimit(rateKey, 10, 15 * 60))) return NextResponse.json({ error: { code: "RATE_LIMITED", message: "Too many sign-in attempts. Please wait and try again." } }, { status: 429, headers: { "Cache-Control": "no-store" } });
     const isEmail = identifier.includes("@");
     const user = await prisma.user.findFirst({
       where: isEmail
         ? { email: identifier.toLowerCase() }
-        : { phone: identifier.replace(/[\\s().-]/g, "") },
+        : { phone: identifier.replace(/[\s().-]/g, "") },
       include: {
         memberships: {
           where: { status: { in: ["active", "pending"] } },
@@ -41,7 +43,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!user.emailVerifiedAt) return NextResponse.json({ error: { code: "EMAIL_NOT_VERIFIED", message: "Verify your email address before signing in." } }, { status: 403, headers: { "Cache-Control": "no-store" } });\n\n    const activeMembership = user.memberships.find(
+    if (!user.emailVerifiedAt) return NextResponse.json({ error: { code: "EMAIL_NOT_VERIFIED", message: "Verify your email address before signing in." } }, { status: 403, headers: { "Cache-Control": "no-store" } });
+
+    const activeMembership = user.memberships.find(
       (membership) => membership.status === "active" && membership.organization.status === "active"
     );
     const familyId = randomUUID();

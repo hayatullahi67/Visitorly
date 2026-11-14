@@ -1,5 +1,10 @@
-const CACHE_NAME = "visitorly-shell-v3";
-const APP_SHELL = ["/", "/manifest.json", "/icons/icon-192.svg", "/icons/icon-512.svg"];
+const CACHE_NAME = "visitorly-shell-v4";
+const APP_SHELL = [
+  "/",
+  "/manifest.json",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -30,7 +35,6 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  // Never cache anything on localhost / development or API routes
   if (
     self.location.hostname === "localhost" ||
     self.location.hostname === "127.0.0.1" ||
@@ -39,9 +43,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Network-first for homepage & public shell assets so offline fallback works without serving stale auth pages
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(async () => (await caches.match("/")) || Response.error())
+    );
+    return;
+  }
+
   if (
-    url.pathname === "/" ||
     url.pathname === "/manifest.json" ||
     url.pathname.startsWith("/icons/")
   ) {

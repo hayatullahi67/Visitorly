@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import PWAInstall from "@/components/pwa-install";
 
 type TabType =
   | "overview"
@@ -967,6 +968,7 @@ export default function EstateAdminDashboard() {
                 <Plus className="h-3.5 w-3.5" />
                 Add Security
               </Button>
+              <PWAInstall compact />
               <Button
                 variant="outline"
                 size="sm"

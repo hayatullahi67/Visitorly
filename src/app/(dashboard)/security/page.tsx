@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import PWAInstall from "@/components/pwa-install";
 import {
   ShieldCheck,
   Search,
@@ -697,6 +698,7 @@ export default function SecurityTerminalPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <PWAInstall compact />
             <button
               type="button"
               onClick={fetchAllGateData}

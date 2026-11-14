@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import PWAInstall from "@/components/pwa-install";
 
 type TabType = "home" | "passes" | "issue" | "notices" | "profile";
 
@@ -771,6 +772,7 @@ export default function ResidentDashboard() {
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">New Pass</span>
             </Button>
+            <PWAInstall compact />
             <Button
               variant="outline"
               size="sm"

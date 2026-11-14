@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import PWAInstall from "@/components/pwa-install";
 import {
   Activity,
   AlertCircle,
@@ -790,6 +791,7 @@ export default function SuperAdminDashboardPage() {
               ))}
             </select>
 
+            <PWAInstall compact />
             <Button
               variant="outline"
               size="sm"

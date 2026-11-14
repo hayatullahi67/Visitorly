@@ -19,6 +19,7 @@ export type SessionPayload = {
   email: string;
   fullName: string;
   sessionId: string;
+  isSuperAdmin?: boolean;
   membershipId?: number;
   organizationId?: number;
   role?: Role;
@@ -43,6 +44,7 @@ export async function createAccessToken(payload: SessionPayload): Promise<string
     email: payload.email,
     fullName: payload.fullName,
     sessionId: payload.sessionId,
+    isSuperAdmin: payload.isSuperAdmin,
     membershipId: payload.membershipId,
     organizationId: payload.organizationId,
     role: payload.role,
@@ -106,6 +108,8 @@ export async function getSession(): Promise<SessionPayload | null> {
   if (!storedSession) return null;
 
   if (session.membershipId) {
+    const allowedOrgStatuses =
+      session.role === "estate_admin" ? ["active", "pending", "suspended"] : ["active"];
     const membership = await prisma.membership.findFirst({
       where: {
         id: session.membershipId,
@@ -113,11 +117,28 @@ export async function getSession(): Promise<SessionPayload | null> {
         organizationId: session.organizationId,
         role: session.role,
         status: "active",
-        organization: { status: "active" },
+        organization: { status: { in: allowedOrgStatuses as ("active" | "pending" | "suspended")[] } },
       },
-      select: { id: true },
+      select: {
+        id: true,
+        organization: { select: { id: true, status: true, activeUntil: true } },
+      },
     });
     if (!membership) return null;
+
+    if (
+      membership.organization.status === "active" &&
+      membership.organization.activeUntil &&
+      new Date() > membership.organization.activeUntil
+    ) {
+      await prisma.organization.update({
+        where: { id: membership.organization.id },
+        data: { status: "suspended" },
+      });
+      if (session.role !== "estate_admin") {
+        return null;
+      }
+    }
   }
 
   return session;
@@ -133,6 +154,58 @@ export async function requireRole(...roles: Role[]): Promise<SessionPayload> {
   const session = await requireSession();
   if (!session.role || !roles.includes(session.role)) throw new Error("FORBIDDEN");
   return session;
+}
+
+export async function requireActiveEstateAdmin(): Promise<SessionPayload> {
+  const session = await requireRole("estate_admin");
+  if (!session.organizationId) throw new Error("FORBIDDEN");
+
+  const org = await prisma.organization.findUnique({
+    where: { id: session.organizationId },
+    select: { id: true, status: true, activeUntil: true },
+  });
+  if (!org) throw new Error("FORBIDDEN");
+
+  if (org.status === "pending") {
+    throw new Error("ESTATE_PENDING");
+  }
+  if (org.status === "suspended" || org.status === "rejected") {
+    throw new Error("ESTATE_DEACTIVATED");
+  }
+  if (org.activeUntil && new Date() > org.activeUntil) {
+    await prisma.organization.update({
+      where: { id: org.id },
+      data: { status: "suspended" },
+    });
+    throw new Error("ESTATE_EXPIRED");
+  }
+
+  return session;
+}
+
+export function getEstateAccessErrorMessage(code: string): string | null {
+  switch (code) {
+    case "ESTATE_PENDING":
+      return "Your estate is pending Super Admin verification. You cannot perform this action until your estate is activated.";
+    case "ESTATE_DEACTIVATED":
+      return "Your estate access has been deactivated by the Super Admin.";
+    case "ESTATE_EXPIRED":
+      return "Your estate activation timeframe has expired. Contact the Super Admin to reactivate.";
+    default:
+      return null;
+  }
+}
+
+export async function requireSuperAdmin(): Promise<SessionPayload> {
+  const session = await requireSession();
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { isSuperAdmin: true, status: true },
+  });
+  if (!user || user.status !== "active" || !user.isSuperAdmin) {
+    throw new Error("FORBIDDEN");
+  }
+  return { ...session, isSuperAdmin: true };
 }
 
 export async function getActiveMembership(userId: number) {

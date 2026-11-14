@@ -62,14 +62,44 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const swCleanupScript = `
+(function() {
+  try {
+    if (typeof window !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      var hadController = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+      var p1 = ('caches' in window)
+        ? caches.keys().then(function(keys) { return Promise.all(keys.map(function(k) { return caches.delete(k); })); })
+        : Promise.resolve();
+      var p2 = ('serviceWorker' in navigator)
+        ? navigator.serviceWorker.getRegistrations().then(function(regs) {
+            return Promise.all(regs.map(function(r) { return r.unregister(); }));
+          })
+        : Promise.resolve();
+      Promise.all([p1, p2]).then(function() {
+        if (hadController && !sessionStorage.getItem('__sw_cleared')) {
+          sessionStorage.setItem('__sw_cleared', '1');
+          location.reload();
+        }
+      });
+    }
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className={`${inter.className} min-h-screen bg-slate-50 antialiased`}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: swCleanupScript }} />
+      </head>
+      <body
+        className={`${inter.className} min-h-screen bg-slate-50 antialiased`}
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>

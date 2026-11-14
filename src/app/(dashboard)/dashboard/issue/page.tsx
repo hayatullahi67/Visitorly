@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, QrCode, CheckCircle2 } from "lucide-react";
@@ -38,7 +38,7 @@ export default function IssuePassPage() {
   }
 
   // Set default times when page loads
-  useState(() => {
+  useEffect(() => {
     const now = new Date();
     const later = new Date(now.getTime() + 4 * 60 * 60 * 1000); // +4 hours
 
@@ -53,7 +53,7 @@ export default function IssuePassPage() {
       validFrom: toLocal(now),
       validTo: toLocal(later),
     }));
-  });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

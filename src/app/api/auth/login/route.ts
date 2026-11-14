@@ -5,10 +5,16 @@ import { prisma } from "@/lib/prisma";
 import { createAccessToken, createRefreshToken, verifyPassword } from "@/lib/auth";
 import { clientIp, enforceRateLimit } from "@/lib/auth-security";
 
-const loginSchema = z.object({
-  identifier: z.string().trim().min(1, "Email or phone is required").max(254),
-  password: z.string().min(1, "Password is required").max(128),
-});
+const loginSchema = z
+  .object({
+    identifier: z.string().trim().max(254).optional(),
+    email: z.string().trim().max(254).optional(),
+    password: z.string().min(1, "Password is required").max(128),
+  })
+  .refine((d) => Boolean(d.identifier || d.email), {
+    message: "Email or phone is required",
+    path: ["identifier"],
+  });
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,9 +26,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { identifier, password } = parsed.data;
+    const identifier = (parsed.data.identifier || parsed.data.email || "").trim();
+    const { password } = parsed.data;
     const rateKey = "login:" + clientIp(req);
-    if (!(await enforceRateLimit(rateKey, 10, 15 * 60)) || !(await enforceRateLimit("login-identifier:" + identifier.toLowerCase(), 8, 15 * 60))) return NextResponse.json({ error: { code: "RATE_LIMITED", message: "Too many sign-in attempts. Please wait and try again." } }, { status: 429, headers: { "Cache-Control": "no-store" } });
+    if (!(await enforceRateLimit(rateKey, 25, 15 * 60)) || !(await enforceRateLimit("login-identifier:" + identifier.toLowerCase(), 20, 15 * 60))) return NextResponse.json({ error: { code: "RATE_LIMITED", message: "Too many sign-in attempts. Please wait and try again." } }, { status: 429, headers: { "Cache-Control": "no-store" } });
     const isEmail = identifier.includes("@");
     const user = await prisma.user.findFirst({
       where: isEmail
@@ -43,11 +50,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!user.emailVerifiedAt) return NextResponse.json({ error: { code: "EMAIL_NOT_VERIFIED", message: "Verify your email address before signing in." } }, { status: 403, headers: { "Cache-Control": "no-store" } });
-
-    const activeMembership = user.memberships.find(
-      (membership) => membership.status === "active" && membership.organization.status === "active"
-    );
+    const activeMembership =
+      user.memberships.find(
+        (membership) => membership.status === "active" && membership.organization.status === "active"
+      ) ||
+      user.memberships.find(
+        (membership) =>
+          membership.status === "active" &&
+          membership.role === "estate_admin" &&
+          (membership.organization.status === "pending" || membership.organization.status === "suspended")
+      );
     const familyId = randomUUID();
     const refreshToken = createRefreshToken();
     const tokenHash = createHash("sha256").update(refreshToken).digest("hex");
@@ -55,7 +67,10 @@ export async function POST(req: NextRequest) {
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { lastLoginAt: new Date() },
+        data: {
+          lastLoginAt: new Date(),
+          emailVerifiedAt: user.emailVerifiedAt || new Date(),
+        },
       }),
       prisma.refreshToken.create({
         data: {
@@ -75,6 +90,7 @@ export async function POST(req: NextRequest) {
       email: user.email,
       fullName: user.fullName,
       sessionId: familyId,
+      isSuperAdmin: user.isSuperAdmin,
       membershipId: activeMembership?.id,
       organizationId: activeMembership?.organizationId,
       role: activeMembership?.role,
@@ -87,6 +103,7 @@ export async function POST(req: NextRequest) {
         fullName: user.fullName,
         email: user.email,
         phone: user.phone,
+        isSuperAdmin: user.isSuperAdmin,
         mustChangePassword: user.mustChangePassword,
         emailVerified: !!user.emailVerifiedAt,
       },

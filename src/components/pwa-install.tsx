@@ -14,9 +14,28 @@ export default function PWAInstall() {
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch((error) => {
-        console.error("Visitorly service worker registration failed:", error);
-      });
+      if (
+        process.env.NODE_ENV !== "production" ||
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"
+      ) {
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((registrations) =>
+            Promise.all(registrations.map((reg) => reg.unregister()))
+          )
+          .catch(() => {});
+        if ("caches" in window) {
+          caches
+            .keys()
+            .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+            .catch(() => {});
+        }
+      } else {
+        navigator.serviceWorker.register("/sw.js").catch((error) => {
+          console.error("Visitorly service worker registration failed:", error);
+        });
+      }
     }
 
     const handleInstall = (event: Event) => {
@@ -47,7 +66,10 @@ export default function PWAInstall() {
   }
 
   return (
-    <button onClick={install} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-2.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 sm:gap-2 sm:px-3 sm:text-sm">
+    <button
+      onClick={install}
+      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-2.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 sm:gap-2 sm:px-3 sm:text-sm"
+    >
       <Download className="h-4 w-4" /> Install app
     </button>
   );

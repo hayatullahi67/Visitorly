@@ -37,9 +37,13 @@ export async function POST(req: NextRequest) {
     return clearRefresh(NextResponse.json({ error: { code: "SESSION_EXPIRED", message: "Your session has ended. Sign in again." } }, { status: 401, headers: { "Cache-Control": "no-store" } }));
   }
 
+  const isOrgExpired =
+    stored.membership?.organization.activeUntil &&
+    new Date() > stored.membership.organization.activeUntil;
   const membership = stored.membership &&
     stored.membership.status === "active" &&
-    stored.membership.organization.status === "active"
+    stored.membership.organization.status === "active" &&
+    !isOrgExpired
       ? stored.membership
       : null;
 
@@ -77,6 +81,7 @@ export async function POST(req: NextRequest) {
     email: stored.user.email,
     fullName: stored.user.fullName,
     sessionId: stored.familyId,
+    isSuperAdmin: stored.user.isSuperAdmin,
     membershipId: membership?.id,
     organizationId: membership?.organizationId,
     role: membership?.role,

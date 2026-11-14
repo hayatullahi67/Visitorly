@@ -7,25 +7,31 @@ export function clientIp(request: Request) {
 
 /** Database-backed fixed-window rate limit shared across application instances. */
 export async function enforceRateLimit(key: string, limit: number, windowSeconds: number) {
-  key = createHash("sha256").update(key).digest("hex");
-  const now = new Date();
-  const expires = new Date(now.getTime() + windowSeconds * 1000);
-  const rows = await prisma.$queryRaw<Array<{ count: number }>>`
-    INSERT INTO auth_rate_limits (key, count, window_started_at, expires_at)
-    VALUES (${key}, 1, ${now}, ${expires})
-    ON CONFLICT (key) DO UPDATE SET
-      count = CASE
-        WHEN auth_rate_limits.window_started_at <= ${new Date(now.getTime() - windowSeconds * 1000)}
-        THEN 1 ELSE auth_rate_limits.count + 1 END,
-      window_started_at = CASE
-        WHEN auth_rate_limits.window_started_at <= ${new Date(now.getTime() - windowSeconds * 1000)}
-        THEN ${now} ELSE auth_rate_limits.window_started_at END,
-      expires_at = CASE
-        WHEN auth_rate_limits.window_started_at <= ${new Date(now.getTime() - windowSeconds * 1000)}
-        THEN ${expires} ELSE auth_rate_limits.expires_at END
-    RETURNING count
-  `;
-  return (rows[0]?.count ?? limit + 1) <= limit;
+  try {
+    key = createHash("sha256").update(key).digest("hex");
+    const now = new Date();
+    const expires = new Date(now.getTime() + windowSeconds * 1000);
+    const windowStart = new Date(now.getTime() - windowSeconds * 1000);
+    const rows = await prisma.$queryRaw<Array<{ count: number }>>`
+      INSERT INTO "auth_rate_limits" ("key", "count", "window_started_at", "expires_at")
+      VALUES (${key}, 1, ${now}, ${expires})
+      ON CONFLICT ("key") DO UPDATE SET
+        "count" = CASE
+          WHEN "auth_rate_limits"."window_started_at" <= ${windowStart}
+          THEN 1 ELSE "auth_rate_limits"."count" + 1 END,
+        "window_started_at" = CASE
+          WHEN "auth_rate_limits"."window_started_at" <= ${windowStart}
+          THEN ${now} ELSE "auth_rate_limits"."window_started_at" END,
+        "expires_at" = CASE
+          WHEN "auth_rate_limits"."window_started_at" <= ${windowStart}
+          THEN ${expires} ELSE "auth_rate_limits"."expires_at" END
+      RETURNING "count"
+    `;
+    return (rows[0]?.count ?? limit + 1) <= limit;
+  } catch (error) {
+    console.warn("Rate limit check error:", error);
+    return true; // Fail open so users are not blocked if rate limit table encounters an issue
+  }
 }
 
 export function makeCode() {
@@ -45,7 +51,24 @@ export async function sendAuthCode(email: string, code: string, purpose: "email_
   const publicKey = process.env.EMAILJS_PUBLIC_KEY;
   const privateKey = process.env.EMAILJS_PRIVATE_KEY;
 
-  if (!serviceId || !templateId || !publicKey || !privateKey) {
+  const isConfigured =
+    serviceId &&
+    templateId &&
+    publicKey &&
+    privateKey &&
+    !serviceId.includes("your_emailjs_") &&
+    !publicKey.includes("your_emailjs_");
+
+  if (!isConfigured) {
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`\n==================================================`);
+      console.log(`[DEV AUTH CODE] Purpose: ${purpose.toUpperCase()}`);
+      console.log(`To: ${email}`);
+      console.log(`Verification Code: >>> ${code} <<<`);
+      console.log(`(Configure real EmailJS keys in .env for actual email delivery)`);
+      console.log(`==================================================\n`);
+      return;
+    }
     throw new Error("EmailJS is not configured. Set EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY and EMAILJS_PRIVATE_KEY.");
   }
 

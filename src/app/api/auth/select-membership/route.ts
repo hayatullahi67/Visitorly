@@ -27,7 +27,10 @@ export async function POST(req: NextRequest) {
       id: parsed.data.membershipId,
       userId: session.userId,
       status: "active",
-      organization: { status: "active" },
+      organization: {
+        status: "active",
+        OR: [{ activeUntil: null }, { activeUntil: { gt: new Date() } }],
+      },
     },
     include: { organization: true },
   });

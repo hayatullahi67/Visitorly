@@ -1,85 +1,178 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  ArrowRight, BadgeCheck, Building2, ChevronDown,
-  ClipboardCheck, Home, QrCode, ShieldCheck, Smartphone,
-  Users, ScanLine,
+  ArrowRight,
+  ArrowUpRight,
+  Bell,
+  Building2,
+  CheckCircle2,
+  ChevronDown,
+  ClipboardCheck,
+  Clock,
+  HeartHandshake,
+  Home,
+  KeyRound,
+  QrCode,
+  ScanLine,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import PWAInstall from "@/components/pwa-install";
 
+const problemPoints = [
+  {
+    title: "No more messy paper logbooks",
+    description:
+      "Handwritten gate books get torn, wet, or unreadable. When something happens, nobody can read the writing. Visitorly keeps clean digital records forever.",
+  },
+  {
+    title: "No more gate traffic & endless calls",
+    description:
+      "Visitors and delivery riders no longer wait outside while guards call residents to confirm. A quick 6-character code gets verified in seconds.",
+  },
+  {
+    title: "No more unverified strangers",
+    description:
+      "Every guest entering your estate is invited by a verified resident, and every exit is confirmed—giving families real peace of mind.",
+  },
+];
+
 const processSteps = [
   {
-    number: "1",
-    title: "The resident prepares for a visitor",
-    description: "Before a guest arrives, the resident signs in to Visitorly, enters the visitor's details and creates a visit pass. The pass contains the information the gate team needs to check the visit.",
+    number: "01",
+    title: "Estate sets up the gate",
+    description:
+      "The estate admin adds streets and house numbers, then approves residents and security officers.",
+    icon: Building2,
+  },
+  {
+    number: "02",
+    title: "Resident creates a pass",
+    description:
+      "Enter your guest's name to get a 6-character code and share it via WhatsApp. Guests need no app.",
     icon: QrCode,
-    detail: "For example: you are expecting a friend, family member or delivery. You create their pass before they reach the gate.",
   },
   {
-    number: "2",
-    title: "The resident shares the pass",
-    description: "The resident sends the pass or its access code to the visitor. The visitor keeps it ready to show when they arrive at the estate entrance.",
-    icon: Smartphone,
-    detail: "The visitor does not need to manage the resident's account. They simply present the pass they were given.",
-  },
-  {
-    number: "3",
-    title: "Security checks the visitor",
-    description: "At the entrance, the security officer checks the pass in Visitorly before allowing the visit to proceed, following the estate's access rules.",
+    number: "03",
+    title: "Security verifies entry",
+    description:
+      "At the gate, the officer checks the code, confirms the host and house, and lets the visitor in.",
     icon: ScanLine,
-    detail: "This gives the gate team a consistent way to check expected visitors instead of relying only on verbal messages.",
   },
   {
-    number: "4",
-    title: "Gate activity is recorded",
-    description: "Where the estate has enabled visit recording, authorised personnel can review the recorded gate activity.",
+    number: "04",
+    title: "Safe 15-min exit check",
+    description:
+      "When leaving, the resident generates a 15-minute exit code so security can log a safe departure.",
+    icon: KeyRound,
+  },
+];
+
+const societyBenefits = [
+  {
+    icon: ShieldCheck,
+    title: "Safer neighbourhoods",
+    description:
+      "Every visitor is tied to a verified resident and house number, keeping strangers out.",
+  },
+  {
+    icon: Clock,
+    title: "Faster gate movement",
+    description:
+      "Pre-approved guest codes cut peak-hour queues down to a few seconds.",
+  },
+  {
     icon: ClipboardCheck,
-    detail: "Estate records help the appropriate team review visitor activity when needed.",
+    title: "Clear gate accountability",
+    description:
+      "Every entry, exit, and refusal is saved with the time and officer's full name.",
+  },
+  {
+    icon: Bell,
+    title: "Estate-wide notices",
+    description:
+      "Admins post announcements once and every resident and guard sees them immediately.",
+  },
+  {
+    icon: HeartHandshake,
+    title: "Smooth deliveries & artisans",
+    description:
+      "Dispatch riders and workers follow a respectful entry process with zero confusion.",
+  },
+  {
+    icon: Smartphone,
+    title: "No extra hardware needed",
+    description:
+      "Works on any smartphone or computer browser—no expensive gate machines required.",
   },
 ];
 
 const roleGuides = [
   {
     icon: Home,
-    title: "Residents",
-    intro: "You are expecting someone? Create a pass before they arrive.",
-    steps: ["Sign in to your Visitorly account.", "Enter your visitor's details and create a pass.", "Share the pass or code with your visitor.", "Check your visitor activity from your account."],
+    title: "For Residents",
+    badge: "Homeowners & Tenants",
+    intro: "Welcome guests with zero phone tag.",
+    steps: [
+      "Select your estate, street, and house",
+      "Create a 6-character visitor pass in seconds",
+      "Share the code via WhatsApp or SMS",
+      "Generate a 15-minute exit code on departure",
+    ],
   },
   {
     icon: ShieldCheck,
-    title: "Security officers",
-    intro: "A visitor arrives at the gate? Check their pass before proceeding.",
-    steps: ["Open the security area using your assigned account.", "Check the visitor's pass or code.", "Confirm the visit details.", "Record the visitor's entry and exit according to estate procedure."],
+    title: "For Security Officers",
+    badge: "Gate & Patrol Team",
+    intro: "Verify every arrival in one second.",
+    steps: [
+      "Select the estate you guard on sign-up",
+      "Check entry or exit codes in Gate Check",
+      "Confirm visitor, host, and house instantly",
+      "Log entries, exits, and refusals under your name",
+    ],
   },
   {
     icon: Building2,
-    title: "Estate administrators",
-    intro: "You oversee the estate? Manage the people and access process.",
-    steps: ["Use your administrator account.", "Manage estate members and access where authorised.", "Oversee visitor activity and gate operations.", "Review records to support estate security."],
+    title: "For Estate Administrators",
+    badge: "Chairmen & Managers",
+    intro: "Full oversight with zero guesswork.",
+    steps: [
+      "Set up streets and house numbers",
+      "Approve resident and security requests",
+      "Monitor active passes and gate activity",
+      "Broadcast Estate Notices to everyone",
+    ],
   },
 ];
 
 const faqs = [
   {
-    question: "Does creating a Visitorly account automatically add me to an estate?",
-    answer: "No. Creating an account gives you your personal Visitorly sign-in. An authorised estate administrator must separately create or assign your estate membership before you can use estate-specific features.",
+    question: "How do I join my estate on Visitorly?",
+    answer:
+      "Click 'Create account', fill in your details in Step 1, and in Step 2 choose whether you are a Resident (select your Estate, Street, and House) or Estate Security (select your Estate). Your estate administrator will review and approve your request.",
   },
   {
-    question: "Does my visitor need to create a Visitorly account?",
-    answer: "The resident creates the visitor pass and shares it with the guest. The guest should keep the pass or code ready to present at the gate. They do not use the resident's account.",
+    question: "How does an Estate Administrator set up a new estate?",
+    answer:
+      "Choose 'Estate Admin' during Step 2 of registration and enter your estate name, physical address, city/state, and total houses. Your admin dashboard opens immediately so you can add streets, house numbers, and approve your community members.",
   },
   {
-    question: "Can I use Visitorly on my phone?",
-    answer: "Yes. Visitorly is designed to work in a mobile browser. You can also install it on a supported device from the browser so it opens like an app from your home screen.",
+    question: "Does my visitor need to download an app or create an account?",
+    answer:
+      "No. You create the pass from your resident dashboard and send the 6-character code (or QR pass) to your guest via WhatsApp or text. They simply show that code to the security officer at the gate.",
   },
   {
-    question: "Who can see estate visitor information?",
-    answer: "Visitor information should only be available to people with the appropriate access in that estate, such as the resident concerned and authorised estate or security personnel.",
+    question: "What is a 15-minute exit code and why does it matter?",
+    answer:
+      "When a visitor is inside the estate and ready to leave, the resident generates a short-lived exit code valid for 15 minutes. Security verifies it at the gate before letting the guest out—protecting both residents and workers from unauthorised departures.",
   },
   {
-    question: "What if I have not been given an estate account?",
-    answer: "Start by creating your personal account. Then contact your estate administrator so they can arrange the correct estate membership for you. Until your membership is active, you may see a pending-access message.",
+    question: "Who is allowed to view the full Estate Gate Activity log?",
+    answer:
+      "Only authorised Security Officers and Estate Administrators belonging to that specific estate can view the gate activity log. Residents focus on their own visitor passes and estate notices.",
   },
 ];
 
@@ -87,173 +180,489 @@ export default async function HomePage() {
   const session = await getSession();
   if (session) {
     if (session.mustChangePassword) redirect("/change-password");
+    if (!session.membershipId || !session.organizationId || !session.role) {
+      redirect("/pending");
+    }
     switch (session.role) {
-      case "estate_admin": redirect("/admin");
-      case "estate_security": redirect("/security");
-      default: redirect("/dashboard");
+      case "estate_admin":
+        redirect("/admin");
+      case "estate_security":
+        redirect("/security");
+      default:
+        redirect("/dashboard");
     }
   }
 
   return (
     <main className="bg-white text-slate-900">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-7">
+      {/* Floating Pill Navigation */}
+      <div className="sticky top-4 z-30 px-4 sm:px-6">
+        <header className="mx-auto flex h-14 max-w-6xl items-center justify-between rounded-full border border-slate-200/90 bg-white/95 px-5 shadow-[0_8px_30px_rgb(15,23,42,0.06)] backdrop-blur sm:px-7">
           <Link href="/" className="flex items-center gap-2.5" aria-label="Visitorly home">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white"><ShieldCheck className="h-6 w-6" /></span>
-            <span className="text-xl font-bold tracking-tight">Visitorly<span className="text-indigo-600">.</span></span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-white shadow-xs">
+              <ShieldCheck className="h-4 w-4" />
+            </span>
+            <span className="text-base font-bold tracking-tight text-slate-950 sm:text-lg">
+              Visitorly<span className="text-indigo-600">.</span>
+            </span>
           </Link>
-          <nav className="hidden items-center gap-7 text-sm font-medium text-slate-600 md:flex">
-            <a href="#how-it-works" className="hover:text-indigo-600">How it works</a>
-            <a href="#for-everyone" className="hover:text-indigo-600">Who uses it</a>
-            <a href="#getting-started" className="hover:text-indigo-600">Getting started</a>
-            <a href="#faq" className="hover:text-indigo-600">FAQs</a>
+
+          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
+            <a href="#why-visitorly" className="hover:text-indigo-600 transition">
+              Why Visitorly
+            </a>
+            <a href="#how-it-works" className="hover:text-indigo-600 transition">
+              How it works
+            </a>
+            <a href="#society" className="hover:text-indigo-600 transition">
+              Community
+            </a>
+            <a href="#faq" className="hover:text-indigo-600 transition">
+              FAQs
+            </a>
           </nav>
+
           <div className="flex items-center gap-2">
             <PWAInstall />
-            <Link href="/login" className="hidden rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:inline-flex">Sign in</Link>
-            <Link href="/register" className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">Create account <ArrowRight className="h-4 w-4" /></Link>
+            <Link
+              href="/login"
+              className="hidden rounded-full px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:inline-flex"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition sm:text-sm"
+            >
+              Get Started <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
-      <section className="border-b border-slate-100 bg-slate-50">
-        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-24">
-          <div>
-            <p className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-indigo-700"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Visitor management for residential estates</p>
-            <h1 className="max-w-2xl text-4xl font-bold leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-[3.6rem]">
-              Know who is coming to your estate — before they reach the gate.
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
-              Visitorly is a visitor management platform for residential estates. Residents use it to prepare visitor passes, visitors show those passes at the entrance, and security officers check them before a visit is allowed to proceed.
-            </p>
-            <p className="mt-4 max-w-xl leading-7 text-slate-600">
-              Instead of depending only on calls, handwritten notes or messages passed around, your estate can use one clear digital process for preparing and checking visits.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/register" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Create your account <ArrowRight className="h-4 w-4" /></Link>
-              <Link href="/login" className="inline-flex h-12 items-center justify-center rounded-lg border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-100">I already have an account</Link>
-            </div>
-            <p className="mt-4 text-xs leading-5 text-slate-500">New to Visitorly? Create your personal account first. Your estate administrator must arrange your estate membership before you can use estate-specific features.</p>
+      {/* Centered Hero Section */}
+      <section className="relative -mt-[72px] overflow-hidden border-b border-slate-100 bg-white pt-32 pb-20 sm:pt-36 sm:pb-24">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:24px_24px] opacity-55"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white via-white/80 to-transparent"
+        />
+
+        <div className="relative mx-auto max-w-5xl px-5 text-center sm:px-8">
+          <p className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 shadow-xs">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            Built for gated estates, residential courts &amp; private developments
+          </p>
+
+          <h1 className="mx-auto max-w-4xl text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-950 sm:text-6xl lg:text-[4rem]">
+            Secure your estate gate,{" "}
+            <span className="text-indigo-600">welcome guests in seconds.</span>
+          </h1>
+
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
+            Say goodbye to messy paper logbooks and long gate delays. Residents create a
+            simple 6-character visitor pass on their phone, and security officers verify it at
+            the gate in one second.
+          </p>
+
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/register"
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-indigo-600 px-7 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition sm:w-auto"
+            >
+              Create your account <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex h-12 w-full items-center justify-center rounded-full border border-slate-300 bg-white px-7 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition sm:w-auto"
+            >
+              Sign in to your estate
+            </Link>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_55px_-30px_rgba(15,23,42,0.28)] sm:p-7">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-5">
-              <div><p className="text-sm font-bold text-slate-900">A visitor's journey</p><p className="mt-1 text-xs text-slate-500">What happens from invitation to gate check</p></div>
-              <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">4 simple steps</span>
-            </div>
-            <div className="space-y-5 pt-6">
-              <div className="flex gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700"><Home className="h-5 w-5" /></span>
-                <div><p className="font-semibold text-slate-900">Resident creates a pass</p><p className="mt-1 text-sm leading-6 text-slate-600">The resident enters the guest's details before the visit.</p></div>
-              </div>
-              <div className="ml-5 h-5 border-l-2 border-dashed border-slate-200" />
-              <div className="flex gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-700"><Smartphone className="h-5 w-5" /></span>
-                <div><p className="font-semibold text-slate-900">Visitor receives the pass</p><p className="mt-1 text-sm leading-6 text-slate-600">The resident shares the pass or access code with the guest.</p></div>
-              </div>
-              <div className="ml-5 h-5 border-l-2 border-dashed border-slate-200" />
-              <div className="flex gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><ScanLine className="h-5 w-5" /></span>
-                <div><p className="font-semibold text-slate-900">Security checks the pass</p><p className="mt-1 text-sm leading-6 text-slate-600">The visitor presents it at the gate for verification.</p></div>
-              </div>
-              <div className="ml-5 h-5 border-l-2 border-dashed border-slate-200" />
-              <div className="flex gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><ClipboardCheck className="h-5 w-5" /></span>
-                <div><p className="font-semibold text-slate-900">The visit is recorded</p><p className="mt-1 text-sm leading-6 text-slate-600">The security officer follows the estate's procedure for recording the visitor's arrival and departure.</p></div>
-              </div>
-            </div>
-            <div className="mt-7 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">The goal is simple: residents know how to prepare for guests, visitors know what to show, and security knows what to check.</div>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Free to start
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Works on any smartphone
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" /> 15-min exit code protection
+            </span>
           </div>
         </div>
       </section>
 
-      <section id="how-it-works" className="scroll-mt-24 py-20 sm:py-24">
+      {/* Why Visitorly / Problem & Motivation Section */}
+      <section id="why-visitorly" className="scroll-mt-24 bg-slate-950 py-16 text-white sm:py-20">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-wider text-indigo-600">How Visitorly works</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">A clear explanation of the full visitor process.</h2>
-            <p className="mt-4 text-base leading-7 text-slate-600">Each person has a simple responsibility. Here is what happens at every stage, and why it matters.</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
+              Why communities switch to Visitorly
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              Your estate deserves better than torn paper books and gate confusion.
+            </h2>
+            <p className="mt-4 text-base leading-7 text-slate-300">
+              Peace of mind at home is priceless. When an estate relies on paper registers and
+              verbal phone calls, security teams get overwhelmed and residents feel frustrated.
+              Visitorly gives everyone a calmer, smarter, safer way to manage every visit.
+            </p>
           </div>
-          <div className="mt-12 grid gap-5 md:grid-cols-2">
+
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {problemPoints.map((item) => (
+              <div
+                key={item.title}
+                className="rounded-2xl border border-white/10 bg-white/5 p-6"
+              >
+                <h3 className="text-lg font-bold text-white">{item.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-300">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="scroll-mt-24 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <div className="max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+              How it works
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+              Four simple steps from invitation to exit.
+            </h2>
+            <p className="mt-2.5 text-sm leading-6 text-slate-600 sm:text-base">
+              No complicated training needed. Everyone in the estate follows one clear process.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {processSteps.map((step) => (
-              <article key={step.number} className="rounded-2xl border border-slate-200 p-6 sm:p-7">
-                <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700"><step.icon className="h-5 w-5" /></span><span className="text-xs font-bold uppercase tracking-wider text-slate-400">Step {step.number}</span></div>
-                <h3 className="mt-5 text-xl font-bold text-slate-900">{step.title}</h3>
-                <p className="mt-3 leading-7 text-slate-600">{step.description}</p>
-                <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600"><span className="font-semibold text-slate-800">Example: </span>{step.detail}</p>
+              <article
+                key={step.number}
+                className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 transition hover:border-indigo-200"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
+                    <step.icon className="h-4 w-4" />
+                  </span>
+                  <span className="font-mono text-xs font-semibold text-slate-400">
+                    {step.number}
+                  </span>
+                </div>
+                <h3 className="mt-4 text-base font-bold text-slate-900">{step.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{step.description}</p>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="for-everyone" className="scroll-mt-24 bg-slate-50 py-20 sm:py-24">
+      {/* Societal & Community Impact */}
+      <section id="society" className="scroll-mt-24 border-y border-slate-100 bg-slate-50 py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="max-w-3xl"><p className="text-sm font-bold uppercase tracking-wider text-indigo-600">Made for the people who use it</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">What each person does in Visitorly.</h2><p className="mt-4 leading-7 text-slate-600">Visitorly has different access areas because residents, security officers and estate administrators do different jobs. Each person should sign in with their own assigned account.</p></div>
-          <div className="mt-12 grid gap-5 lg:grid-cols-3">
+          <div className="max-w-3xl">
+            <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">
+              Built for safer communities
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+              How Visitorly strengthens security and trust.
+            </h2>
+            <p className="mt-3 text-base leading-7 text-slate-600">
+              When an estate knows who is coming in and going out, the entire community sleeps easier.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {societyBenefits.map((benefit) => (
+              <div
+                key={benefit.title}
+                className="flex items-start gap-3.5 rounded-xl border border-slate-200 bg-white p-5"
+              >
+                <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+                  <benefit.icon className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">{benefit.title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    {benefit.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Who Uses It */}
+      <section id="for-everyone" className="scroll-mt-24 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <div className="max-w-3xl">
+            <p className="text-sm font-bold uppercase tracking-wider text-indigo-600">
+              One platform, three dedicated portals
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+              Every person sees only what they need for their role.
+            </h2>
+            <p className="mt-3 text-base leading-7 text-slate-600">
+              Residents manage their guests, security officers focus on gate checks and logs,
+              and estate administrators oversee the whole estate.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">
             {roleGuides.map((role) => (
-              <article key={role.title} className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7">
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700"><role.icon className="h-6 w-6" /></span>
-                <h3 className="mt-5 text-xl font-bold">{role.title}</h3>
-                <p className="mt-2 min-h-[72px] leading-6 text-slate-600">{role.intro}</p>
-                <ol className="mt-6 space-y-4">
-                  {role.steps.map((step, index) => <li key={step} className="flex gap-3 text-sm leading-6 text-slate-600"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">{index + 1}</span>{step}</li>)}
-                </ol>
+              <article
+                key={role.title}
+                className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 transition hover:border-indigo-200"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
+                    <role.icon className="h-5 w-5" />
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700">
+                    {role.badge}
+                  </span>
+                </div>
+                <h3 className="mt-4 text-lg font-bold text-slate-900">{role.title}</h3>
+                <p className="mt-1 text-sm text-slate-600">{role.intro}</p>
+                <ul className="mt-4 space-y-2.5 border-t border-slate-100 pt-4">
+                  {role.steps.map((step) => (
+                    <li
+                      key={step}
+                      className="flex items-start gap-2.5 text-sm leading-5 text-slate-600"
+                    >
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ul>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="getting-started" className="scroll-mt-24 py-20 sm:py-24">
+      {/* Getting Started Banner */}
+      <section id="getting-started" className="scroll-mt-24 pb-20 sm:pb-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="grid gap-10 rounded-3xl bg-indigo-950 p-7 text-white sm:p-10 lg:grid-cols-[1fr_.9fr] lg:items-center lg:p-14">
-            <div><p className="text-sm font-bold uppercase tracking-wider text-indigo-300">Getting started</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Your first steps with Visitorly.</h2><p className="mt-4 max-w-xl leading-7 text-indigo-100">You do not need to understand everything before you begin. Start with your personal account, then connect to the estate you belong to.</p><Link href="/register" className="mt-7 inline-flex h-12 items-center gap-2 rounded-lg bg-white px-6 text-sm font-semibold text-indigo-950 hover:bg-indigo-50">Create a personal account <ArrowRight className="h-4 w-4" /></Link></div>
-            <div className="space-y-4">
-              <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">1</span><div><p className="font-semibold">Register your details</p><p className="mt-1 text-sm leading-6 text-indigo-100">Enter your name, email address and password to create your personal account.</p></div></div>
-              <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">2</span><div><p className="font-semibold">Sign in to your account</p><p className="mt-1 text-sm leading-6 text-indigo-100">Use the email address and password you registered with to access your account.</p></div></div>
-              <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">3</span><div><p className="font-semibold">Ask your estate administrator to add you</p><p className="mt-1 text-sm leading-6 text-indigo-100">Your personal account does not automatically give you estate access. The estate administrator must arrange your membership.</p></div></div>
-              <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">4</span><div><p className="font-semibold">Use your assigned dashboard</p><p className="mt-1 text-sm leading-6 text-indigo-100">After access is active, Visitorly takes you to the area for your role.</p></div></div>
+          <div className="grid gap-10 rounded-3xl bg-indigo-950 p-7 text-white sm:p-10 lg:grid-cols-[1fr_.95fr] lg:items-center lg:p-14">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-wider text-indigo-300">
+                Start in 2 minutes
+              </p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+                Bring modern security to your estate today.
+              </h2>
+              <p className="mt-4 max-w-xl leading-7 text-indigo-100">
+                Whether you are an estate chairman setting up a new community, a resident
+                joining your street, or a security officer on gate duty—you can get started
+                right from your phone.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link
+                  href="/register"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-white px-6 text-sm font-semibold text-indigo-950 hover:bg-indigo-50 transition"
+                >
+                  Create your account <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex h-12 items-center rounded-xl border border-white/25 px-6 text-sm font-semibold text-white hover:bg-white/10 transition"
+                >
+                  Sign in
+                </Link>
+              </div>
+            </div>
+
+            <div className="space-y-3.5">
+              <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">
+                  1
+                </span>
+                <div>
+                  <p className="font-semibold">Create your personal account</p>
+                  <p className="mt-1 text-sm leading-6 text-indigo-100">
+                    Enter your full name, email address, optional phone number, and password.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">
+                  2
+                </span>
+                <div>
+                  <p className="font-semibold">Choose your role &amp; estate</p>
+                  <p className="mt-1 text-sm leading-6 text-indigo-100">
+                    Register a new estate as an Admin, or select your existing Estate, Street,
+                    and House to join.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-bold">
+                  3
+                </span>
+                <div>
+                  <p className="font-semibold">Get approved &amp; go live</p>
+                  <p className="mt-1 text-sm leading-6 text-indigo-100">
+                    Once your estate admin approves your request, your portal unlocks
+                    automatically.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-slate-100 bg-slate-50 py-16">
-        <div className="mx-auto grid max-w-7xl gap-8 px-5 sm:px-8 md:grid-cols-3">
-          <div className="flex gap-3"><Users className="h-6 w-6 shrink-0 text-indigo-600" /><div><h3 className="font-bold">Separate user access</h3><p className="mt-2 text-sm leading-6 text-slate-600">Residents, security officers and estate administrators use accounts with different permissions.</p></div></div>
-          <div className="flex gap-3"><LockKeyholeIcon /><div><h3 className="font-bold">Access based on your role</h3><p className="mt-2 text-sm leading-6 text-slate-600">Your account should only show the estate tools you are authorised to use.</p></div></div>
-          <div className="flex gap-3"><Smartphone className="h-6 w-6 shrink-0 text-indigo-600" /><div><h3 className="font-bold">Use it on your phone</h3><p className="mt-2 text-sm leading-6 text-slate-600">Open Visitorly in your browser or install it on a supported device for quick access from your home screen.</p></div></div>
-        </div>
-      </section>
-
+      {/* FAQs */}
       <section id="faq" className="scroll-mt-24 py-20 sm:py-24">
         <div className="mx-auto max-w-3xl px-5 sm:px-8">
-          <div className="text-center"><p className="text-sm font-bold uppercase tracking-wider text-indigo-600">Questions and answers</p><h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Things you may want to know.</h2><p className="mt-4 leading-7 text-slate-600">Clear answers to common questions about accounts, visitors and estate access.</p></div>
+          <div className="text-center">
+            <p className="text-sm font-bold uppercase tracking-wider text-indigo-600">
+              Questions and answers
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              Everything you need to know.
+            </h2>
+            <p className="mt-4 leading-7 text-slate-600">
+              Straightforward answers about accounts, visitor codes, exit codes, and estate
+              security.
+            </p>
+          </div>
           <div className="mt-10 divide-y divide-slate-200 border-y border-slate-200">
-            {faqs.map((faq) => <details key={faq.question} className="group py-5"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900"><span>{faq.question}</span><ChevronDown className="h-5 w-5 shrink-0 text-slate-500 transition group-open:rotate-180" /></summary><p className="mt-3 max-w-2xl pr-8 text-sm leading-7 text-slate-600">{faq.answer}</p></details>)}
+            {faqs.map((faq) => (
+              <details key={faq.question} className="group py-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900">
+                  <span>{faq.question}</span>
+                  <ChevronDown className="h-5 w-5 shrink-0 text-slate-500 transition group-open:rotate-180" />
+                </summary>
+                <p className="mt-3 max-w-2xl pr-8 text-sm leading-7 text-slate-600">
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-indigo-600 py-16 text-white sm:py-20">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 sm:px-8 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-2xl"><h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Ready to make visitor access clearer?</h2><p className="mt-3 leading-7 text-indigo-100">Create your account and follow the steps to connect with your estate.</p></div>
-          <Link href="/register" className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-6 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">Get started <ArrowRight className="h-4 w-4" /></Link>
-        </div>
-      </section>
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-slate-50">
+        <div className="mx-auto max-w-7xl px-5 pt-14 pb-10 sm:px-8">
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-8">
+            <div className="lg:col-span-5">
+              <Link href="/" className="inline-flex items-center gap-2.5 text-lg font-bold tracking-tight text-slate-900">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                  <ShieldCheck className="h-4.5 w-4.5" />
+                </span>
+                Visitorly
+              </Link>
+              <p className="mt-4 max-w-sm text-sm leading-6 text-slate-600">
+                Digital visitor passes, fast gate verification, and estate-wide notices built
+                for residential communities.
+              </p>
+              <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                Works on mobile &amp; desktop browsers
+              </div>
+            </div>
 
-      <footer className="bg-white py-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 text-sm text-slate-500 sm:px-8 md:flex-row">
-          <Link href="/" className="flex items-center gap-2 font-bold text-slate-900"><ShieldCheck className="h-5 w-5 text-indigo-600" /> Visitorly</Link>
-          <p>Clearer visitor access for residential estates.</p>
-          <div className="flex gap-5"><Link href="/login" className="hover:text-indigo-600">Sign in</Link><Link href="/register" className="hover:text-indigo-600">Create account</Link></div>
+            <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7">
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900">
+                  Platform
+                </h3>
+                <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
+                  <li>
+                    <a href="#why-visitorly" className="hover:text-indigo-600 transition">
+                      Why Visitorly
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#how-it-works" className="hover:text-indigo-600 transition">
+                      How it works
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#society" className="hover:text-indigo-600 transition">
+                      Community impact
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#faq" className="hover:text-indigo-600 transition">
+                      FAQs
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900">
+                  Portals
+                </h3>
+                <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
+                  <li>
+                    <a href="#for-everyone" className="hover:text-indigo-600 transition">
+                      Residents
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#for-everyone" className="hover:text-indigo-600 transition">
+                      Security Officers
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#for-everyone" className="hover:text-indigo-600 transition">
+                      Estate Administrators
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#getting-started" className="hover:text-indigo-600 transition">
+                      Getting started
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="col-span-2 sm:col-span-1">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900">
+                  Access
+                </h3>
+                <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
+                  <li>
+                    <Link href="/login" className="hover:text-indigo-600 transition">
+                      Sign in
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/register" className="hover:text-indigo-600 transition">
+                      Create account
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/register" className="hover:text-indigo-600 transition">
+                      Register an estate
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-slate-200 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center">
+            <p>&copy; {new Date().getFullYear()} Visitorly. All rights reserved.</p>
+            <p>Built for gated estates, residential courts &amp; private developments.</p>
+          </div>
         </div>
       </footer>
     </main>
   );
-}
-
-function LockKeyholeIcon() {
-  return <BadgeCheck className="h-6 w-6 shrink-0 text-indigo-600" />;
 }

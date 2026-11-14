@@ -2,26 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { randomBytes } from "crypto";
+import { formatPassResponse, generateCode } from "@/lib/pass-utils";
 
 const createPassSchema = z.object({
-  visitorName: z.string().min(2).max(120),
-  phone: z.string().max(20).optional(),
-  purpose: z.enum(["personal", "delivery", "maintenance", "event_guest", "other"]).default("personal"),
+  visitorName: z.string().trim().min(2, "Visitor name is required").max(120),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  purpose: z
+    .enum(["personal", "delivery", "maintenance", "event_guest", "other"])
+    .default("personal"),
   validFrom: z.string().datetime(),
   validTo: z.string().datetime(),
-  houseId: z.number().int().positive().optional(), // only needed for admin
+  houseId: z.coerce.number().int().positive().optional(),
 });
-
-function generateCode(length = 6): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusing chars
-  let code = "";
-  const bytes = randomBytes(length);
-  for (let i = 0; i < length; i++) {
-    code += chars[bytes[i] % chars.length];
-  }
-  return code;
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,14 +21,14 @@ export async function POST(req: NextRequest) {
     if (!session) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Please sign in" } },
-        { status: 401 }
+        { status: 401, headers: { "Cache-Control": "no-store" } }
       );
     }
 
     if (!session.membershipId || !session.organizationId) {
       return NextResponse.json(
         { error: { code: "NO_MEMBERSHIP", message: "No active estate membership" } },
-        { status: 403 }
+        { status: 403, headers: { "Cache-Control": "no-store" } }
       );
     }
 
@@ -48,11 +40,11 @@ export async function POST(req: NextRequest) {
         {
           error: {
             code: "VALIDATION_ERROR",
-            message: "Invalid input",
+            message: "Please check the visitor pass details.",
             details: parsed.error.flatten().fieldErrors,
           },
         },
-        { status: 400 }
+        { status: 400, headers: { "Cache-Control": "no-store" } }
       );
     }
 
@@ -63,19 +55,28 @@ export async function POST(req: NextRequest) {
 
     if (to <= from) {
       return NextResponse.json(
-        { error: { code: "INVALID_WINDOW", message: "End time must be after start time" } },
-        { status: 400 }
+        {
+          error: {
+            code: "INVALID_WINDOW",
+            message: "End time must be after start time",
+          },
+        },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
       );
     }
 
     if (to <= new Date()) {
       return NextResponse.json(
-        { error: { code: "INVALID_WINDOW", message: "End time must be in the future" } },
-        { status: 400 }
+        {
+          error: {
+            code: "INVALID_WINDOW",
+            message: "End time must be in the future",
+          },
+        },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    // Get the membership to find the house
     const membership = await prisma.membership.findUnique({
       where: { id: session.membershipId },
       include: { house: true },
@@ -84,11 +85,10 @@ export async function POST(req: NextRequest) {
     if (!membership || membership.status !== "active") {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Membership not active" } },
-        { status: 403 }
+        { status: 403, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    // Residents use their own house; admins can pass houseId
     let houseId = membership.houseId;
     if (session.role === "estate_admin" && parsed.data.houseId) {
       houseId = parsed.data.houseId;
@@ -96,12 +96,16 @@ export async function POST(req: NextRequest) {
 
     if (!houseId) {
       return NextResponse.json(
-        { error: { code: "NO_HOUSE", message: "No house linked to this account" } },
-        { status: 400 }
+        {
+          error: {
+            code: "NO_HOUSE",
+            message: "No house is linked to your resident account.",
+          },
+        },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    // Generate unique code within the estate
     let code = generateCode();
     let attempts = 0;
     while (attempts < 10) {
@@ -126,31 +130,30 @@ export async function POST(req: NextRequest) {
         phone: phone?.trim() || null,
         purpose,
         houseId,
-        hostMembershipId: session.role === "resident" ? session.membershipId : null,
+        hostMembershipId:
+          session.role === "resident" ? session.membershipId : null,
         createdById: session.userId,
         createdByRole: session.role as any,
         validFrom: from,
         validTo: to,
         status: "active",
       },
+      include: {
+        house: { include: { street: true } },
+        createdBy: { select: { fullName: true } },
+        admittedBy: { select: { fullName: true } },
+        hostMembership: {
+          include: { user: { select: { fullName: true } } },
+        },
+      },
     });
 
     return NextResponse.json(
       {
-        pass: {
-          id: pass.id,
-          code: pass.code,
-          visitorName: pass.visitorName,
-          phone: pass.phone,
-          purpose: pass.purpose,
-          status: pass.status,
-          validFrom: pass.validFrom,
-          validTo: pass.validTo,
-          qrData: pass.code,
-        },
+        pass: formatPassResponse(pass),
         code: pass.code,
       },
-      { status: 201 }
+      { status: 201, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
     console.error("Create pass error:", error);
@@ -161,7 +164,7 @@ export async function POST(req: NextRequest) {
           message: "Something went wrong. Please try again.",
         },
       },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }
@@ -172,69 +175,98 @@ export async function GET(req: NextRequest) {
     if (!session?.organizationId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Please sign in" } },
-        { status: 401 }
+        { status: 401, headers: { "Cache-Control": "no-store" } }
       );
     }
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") || undefined;
-    const search = searchParams.get("search") || undefined;
+    const search = searchParams.get("search")?.trim() || undefined;
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const pageSize = 20;
+    const now = new Date();
 
-    const where: any = {
+    const baseWhere: any = {
       organizationId: session.organizationId,
     };
 
-    // Residents only see their own passes
     if (session.role === "resident" && session.membershipId) {
-      where.hostMembershipId = session.membershipId;
+      baseWhere.hostMembershipId = session.membershipId;
     }
 
+    const where: any = { ...baseWhere };
+
     if (status && status !== "all") {
-      where.status = status;
+      if (status === "active") {
+        where.status = "active";
+        where.validTo = { gt: now };
+      } else if (status === "expired") {
+        where.status = "active";
+        where.validTo = { lte: now };
+      } else {
+        where.status = status;
+      }
     }
 
     if (search) {
       where.OR = [
         { visitorName: { contains: search, mode: "insensitive" } },
         { code: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search, mode: "insensitive" } },
       ];
     }
 
-    const [total, passes] = await Promise.all([
-      prisma.visitorPass.count({ where }),
-      prisma.visitorPass.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        include: {
-          house: { include: { street: true } },
-        },
-      }),
-    ]);
+    const [total, passes, activePassesCount, insideNowCount, totalPassesCount, noticesCount] =
+      await Promise.all([
+        prisma.visitorPass.count({ where }),
+        prisma.visitorPass.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          include: {
+            house: { include: { street: true } },
+            createdBy: { select: { fullName: true } },
+            admittedBy: { select: { fullName: true } },
+            hostMembership: {
+              include: { user: { select: { fullName: true } } },
+            },
+          },
+        }),
+        prisma.visitorPass.count({
+          where: {
+            ...baseWhere,
+            status: "active",
+            validTo: { gt: now },
+          },
+        }),
+        prisma.visitorPass.count({
+          where: {
+            ...baseWhere,
+            status: "checked_in",
+          },
+        }),
+        prisma.visitorPass.count({ where: baseWhere }),
+        prisma.notice.count({
+          where: { organizationId: session.organizationId },
+        }),
+      ]);
 
-    return NextResponse.json({
-      passes: passes.map((p) => ({
-        id: p.id,
-        code: p.code,
-        visitorName: p.visitorName,
-        phone: p.phone,
-        purpose: p.purpose,
-        status: p.status,
-        validFrom: p.validFrom,
-        validTo: p.validTo,
-        checkedInAt: p.checkedInAt,
-        checkedOutAt: p.checkedOutAt,
-        house: p.house
-          ? `${p.house.number}, ${p.house.street.name}`
-          : null,
-      })),
-      page,
-      pageSize,
-      total,
-    });
+    return NextResponse.json(
+      {
+        passes: passes.map(formatPassResponse),
+        stats: {
+          activePasses: activePassesCount,
+          insideNow: insideNowCount,
+          totalPasses: totalPassesCount,
+          notices: noticesCount,
+        },
+        page,
+        pageSize,
+        total,
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (error) {
     console.error("List passes error:", error);
     return NextResponse.json(
@@ -244,7 +276,7 @@ export async function GET(req: NextRequest) {
           message: "Something went wrong",
         },
       },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

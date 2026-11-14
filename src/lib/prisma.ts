@@ -8,14 +8,17 @@ import ws from "ws";
 process.env.WS_NO_BUFFER_UTIL = "1";
 process.env.WS_NO_UTF_8_VALIDATE = "1";
 
-// 2. Route external DNS lookups through public DNS (8.8.8.8 / 1.1.1.1) via dns.resolve4.
-// Node's default dns.lookup calls OS getaddrinfo, which ignores dns.setServers() and
-// fails with EAI_AGAIN on networks with unreliable ISP DNS resolvers.
+// 2. In local development only (or when FORCE_PUBLIC_DNS=true), route external
+// DNS lookups through public DNS (8.8.8.8 / 1.1.1.1) via dns.resolve4 to avoid
+// EAI_AGAIN on networks with unreliable ISP DNS resolvers. Never patch in production.
 const globalForDns = globalThis as unknown as {
   dnsPatched?: boolean;
 };
 
-if (!globalForDns.dnsPatched) {
+const shouldPatchDns =
+  process.env.NODE_ENV === "development" || process.env.FORCE_PUBLIC_DNS === "true";
+
+if (shouldPatchDns && !globalForDns.dnsPatched) {
   try {
     dns.setDefaultResultOrder("ipv4first");
     dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);

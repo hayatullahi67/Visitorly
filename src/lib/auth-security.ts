@@ -5,16 +5,29 @@ export function clientIp(request: Request) {
   return request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() || "unknown";
 }
 
+const fallbackRateLimits = new Map<string, { count: number; expiresAt: number }>();
+
+function enforceMemoryRateLimit(hashedKey: string, limit: number, windowSeconds: number) {
+  const now = Date.now();
+  const entry = fallbackRateLimits.get(hashedKey);
+  if (!entry || entry.expiresAt <= now) {
+    fallbackRateLimits.set(hashedKey, { count: 1, expiresAt: now + windowSeconds * 1000 });
+    return 1 <= limit;
+  }
+  entry.count += 1;
+  return entry.count <= limit;
+}
+
 /** Database-backed fixed-window rate limit shared across application instances. */
 export async function enforceRateLimit(key: string, limit: number, windowSeconds: number) {
+  const hashedKey = createHash("sha256").update(key).digest("hex");
   try {
-    key = createHash("sha256").update(key).digest("hex");
     const now = new Date();
     const expires = new Date(now.getTime() + windowSeconds * 1000);
     const windowStart = new Date(now.getTime() - windowSeconds * 1000);
     const rows = await prisma.$queryRaw<Array<{ count: number }>>`
       INSERT INTO "auth_rate_limits" ("key", "count", "window_started_at", "expires_at")
-      VALUES (${key}, 1, ${now}, ${expires})
+      VALUES (${hashedKey}, 1, ${now}, ${expires})
       ON CONFLICT ("key") DO UPDATE SET
         "count" = CASE
           WHEN "auth_rate_limits"."window_started_at" <= ${windowStart}
@@ -29,8 +42,8 @@ export async function enforceRateLimit(key: string, limit: number, windowSeconds
     `;
     return (rows[0]?.count ?? limit + 1) <= limit;
   } catch (error) {
-    console.warn("Rate limit check error:", error);
-    return true; // Fail open so users are not blocked if rate limit table encounters an issue
+    console.warn("Rate limit DB check error, using in-memory fallback:", error);
+    return enforceMemoryRateLimit(hashedKey, limit, windowSeconds);
   }
 }
 

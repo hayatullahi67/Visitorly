@@ -66,6 +66,12 @@ export const viewport: Viewport = {
 const swCleanupScript = `
 (function() {
   try {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.__visitorlyInstallPrompt = e;
+      });
+    }
     if (typeof window !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
       var hadController = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
       var p1 = ('caches' in window)
